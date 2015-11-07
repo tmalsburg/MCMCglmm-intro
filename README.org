@@ -647,13 +647,13 @@ Yay, the three way interaction is significant! But note that we can't really eva
 
 * References
 
+- Barr, D. J., Levy, R., Scheepers, C., & Tily, H. J. (2013). Random
+  effects structure for confirmatory hypothesis testing: Keep it
+  maximal. Journal of Memory and Language, 68(3),
+  255–278. http://dx.doi.org/10.1016/j.jml.2012.11.001
 - Bates, D., Kliegl, R., Vasishth, S., & Baayen,
   H. (2015). Parsimonious mixed models. Manuscript published on arXiv.
   http://arxiv.org/abs/1506.04967
-- Wu, S., Barr, D. J., Gann, T. M., & Keysar, B. (2013). How culture
-  influences perspective taking: Differences in correction, not
-  integration. Frontiers in Human Neuroscience, 7(),
-  822. http://dx.doi.org/10.3389/fnhum.2013.00822
 - Gelman, A., & Rubin, D. B. (1992). Inference from iterative
   simulation using multiple sequences. Statistical Science, 7(4),
   457–472.
