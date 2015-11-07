@@ -13,11 +13,11 @@ To illustrate the use of MCMCglmm, we use a real data set from a language produc
 * The data and design
 
 #+BEGIN_SRC R :session *R* :exports none
-load("models.Rda")
+load("data/models.Rda")
 #+END_SRC
 
 #+BEGIN_SRC R :session *R* :exports both :results output
-d <- read.table("data.tsv", sep="\t", head=T)
+d <- read.table("data/data.tsv", sep="\t", head=T)
 
 head(d)
 summary(d)
@@ -91,13 +91,13 @@ a     -1   1
 
 In principle, lme4 can deal with unbalanced data sets but the low number of data points means that it is hard to estimate some of the effects.  In the present scenario, this is particularly a problem because the main question was whether the three-way interaction indicated in the following plot was significant or not.
 
-#+BEGIN_SRC R :session *R* :results graphics :exports both :file proportions_by_condition.png :width 400 :height 400 :res 100
+#+BEGIN_SRC R :session *R* :results graphics :exports both :file plots/proportions_by_condition.png :width 400 :height 400 :res 100
 plot(0:10, 0:10, t="n")
 text(5, 5, labels="TODO: Add the plot.")
 #+END_SRC
 
 #+RESULTS:
-[[file:proportions_by_condition.png]]
+[[file:plots/proportions_by_condition.png]]
 
 We start with the maximal model justified by the design:
 
@@ -364,17 +364,17 @@ a:b:c       -1.0295 -0.76754 -0.56468 -0.37678 -0.01668
 
 One way to get a sense of whether the resulting samples are an accurate representation of the true posterior is to plot them.  In the panels on the left, we see the traces of the parameters showing which values the parameters assumed throughout the sampling process; the index of the sample is on the x-axis (starting with 3000 because we discarded the first 3000 samples) and the value of the parameter the y-axis.  In the panels on the right, we see the distribution of the values that the parameters assumed, i.e. the posteriors.
 
-#+BEGIN_SRC R :session *R* :results graphics :exports both :file samples_1.png :width 800 :height 1000 :res 100
+#+BEGIN_SRC R :session *R* :results graphics :exports both :file plots/samples_1.png :width 800 :height 1000 :res 100
 par(mfrow=c(8,2), mar=c(2,2,1,0))
 plot(m3$Sol, auto.layout=F)
 #+END_SRC
 
 #+RESULTS:
-[[file:samples_1.png]]
+[[file:plots/samples_1.png]]
 
 There are a number of signals in these plots suggesting that our sample may not be good enough.  First, there is high autocorrelation, which means that samples tend to have similar parameter values as the directly preceding samples.  Second, the traces of the parameters are not /stationary/, which means that the sampling process dwells in one part of the parameter space and then suddenly visits other parts of the parameter space.  This can be observed at around 3900 samples where the trace of ~c~ suddenly moves to more negative values and the trace of ~a:b~ moves to more positive values (see also ~a:b:c~ and ~b~).  Both taken together these properties suggest that our sample is not yet a good-enough approximation of the true posterior distribution.  Think about it this way: looking at these plots, is it likely that the density plots on the right would change if we would continue taking samples?  Yes, it is because there may be more sudden moves to other parts of the parameter space like that at around 3900.  Or the sampling process might dwell in the position at 4000 for a longer time leading to shift in the distributions.  For example the density plot of ~a:b~ has a long tail coming from the last ~100 samples and this tail might have gotten fatter if we hadn’t ended the sampling process at 4000.  As long as these density plots keep changing, the sampling process has not converged and we don’t have a stable posterior.  Ideally, what we would like to have is something like the following:
 
-#+BEGIN_SRC R :session *R* :exports both :results graphics :file samples_2.png :width 800 :height 125 :res 60
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file plots/samples_2.png :width 800 :height 125 :res 60
 par(mfrow=c(1,2), mar=c(2,2,1,0))
 x <- rnorm(1000)
 plot(3001:4000, x, t="l", main="Trace of x")
@@ -382,7 +382,7 @@ plot(density(x), main="Density of x")
 #+END_SRC
 
 #+RESULTS:
-[[file:samples_2.png]]
+[[file:plots/samples_2.png]]
 
 In this trace plot of random data, there is no autocorrelation of consecutive samples and the distribution of samples is stationary.  It is very likely that taking more samples wouldn’t shift the distribution substantially.  Hence, if we see a plot like this, we would be more confident that our posterior is a good approximation of the true posterior.
 
@@ -392,7 +392,7 @@ There are several things that we can do in order to improve our sample.  We can 
 
 What thinning factor?  Plot of the autocorrelation function for each parameter.
 
-#+BEGIN_SRC R :session *R* :exports both :results graphics :file autocorrelation_1.png :width 800 :height 600 :res 100
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file plots/autocorrelation_1.png :width 800 :height 600 :res 100
 plot.acfs <- function(x) {
   n <- dim(x)[2]
   par(mfrow=c(ceiling(n/2),2), mar=c(2,2,3,0))
@@ -405,7 +405,7 @@ plot.acfs(m3$Sol)
 #+END_SRC
 
 #+RESULTS:
-[[file:autocorrelation_1.png]]
+[[file:plots/autocorrelation_1.png]]
 
 Use thinning factor of 20 to get rid of some of the autocorrelation:
 
@@ -421,7 +421,7 @@ m4 <- MCMCglmm(p ~ (a + b + c)^3,
                nitt   = 23000)
 #+END_SRC
 
-#+BEGIN_SRC R :session *R* :exports both :results graphics :file samples_3.png :width 800 :height 400 :res 100
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file plots/samples_3.png :width 800 :height 400 :res 100
 chain.plot <- function(x) {
   n <- dim(x)[2]
   par(mfrow=c(ceiling(n/2),2), mar=c(0,0.5,1,0.5))
@@ -433,14 +433,14 @@ chain.plot(m4$Sol)
 #+END_SRC
 
 #+RESULTS:
-[[file:samples_3.png]]
+[[file:plots/samples_3.png]]
 
-#+BEGIN_SRC R :session *R* :exports both :results graphics :file autocorrelation_2.png :width 800 :height 600 :res 100
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file plots/autocorrelation_2.png :width 800 :height 600 :res 100
 plot.acfs(m4$Sol)
 #+END_SRC
 
 #+RESULTS:
-[[file:autocorrelation_2.png]]
+[[file:plots/autocorrelation_2.png]]
 
 Ok, we need to simplify the model.  This model had only random intercepts and the random sloped for the effects of interest:
 
@@ -467,19 +467,19 @@ m5 <- MCMCglmm(p ~ (a + b + c)^3,
                nitt   = 4000)
 #+END_SRC
 
-#+BEGIN_SRC R :session *R* :exports both :results graphics :file samples_4.png :width 800 :height 400 :res 100
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file plots/samples_4.png :width 800 :height 400 :res 100
 chain.plot(m5$Sol)
 #+END_SRC
 
 #+RESULTS:
-[[file:samples_4.png]]
+[[file:plots/samples_4.png]]
 
-#+BEGIN_SRC R :session *R* :exports both :results graphics :file autocorrelation_3.png :width 800 :height 600 :res 100
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file plots/autocorrelation_3.png :width 800 :height 600 :res 100
 plot.acfs(m5$Sol)
 #+END_SRC
 
 #+RESULTS:
-[[file:autocorrelation_3.png]]
+[[file:plots/autocorrelation_3.png]]
 
 Still too much autocorrelation but this time thinning may help:
 
@@ -495,19 +495,19 @@ m6 <- MCMCglmm(p ~ (a + b + c)^3,
                nitt   = 23000)
 #+END_SRC
 
-#+BEGIN_SRC R :session *R* :exports both :results graphics :file samples_5.png :width 800 :height 400 :res 100
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file plots/samples_5.png :width 800 :height 400 :res 100
 chain.plot(m6$Sol)
 #+END_SRC
 
 #+RESULTS:
-[[file:samples_5.png]]
+[[file:plots/samples_5.png]]
 
-#+BEGIN_SRC R :session *R* :exports both :results graphics :file autocorrelation_4.png :width 800 :height 600 :res 100
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file plots/autocorrelation_4.png :width 800 :height 600 :res 100
 plot.acfs(m6$Sol)
 #+END_SRC
 
 #+RESULTS:
-[[file:autocorrelation_4.png]]
+[[file:plots/autocorrelation_4.png]]
 
 Looks good but a more formal criterion would be nice.
 
@@ -534,7 +534,7 @@ ml <- lapply(ml, function(m) m$Sol)
 ml <- do.call(mcmc.list, ml)
 #+END_SRC
 
-#+BEGIN_SRC R :session *R* :exports both :results graphics :file gelman_rubin.png :width 800 :height 600 :res 100
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file plots/gelman_rubin.png :width 800 :height 600 :res 100
 library(coda)
 
 par(mfrow=c(4,2), mar=c(2,2,1,2))
@@ -542,7 +542,7 @@ gelman.plot(ml, auto.layout=F)
 #+END_SRC
 
 #+RESULTS:
-[[file:gelman_rubin.png]]
+[[file:plots/gelman_rubin.png]]
 
 #+BEGIN_SRC R :session *R* :exports both :results output
 gelman.diag(ml)
@@ -569,13 +569,13 @@ Multivariate psrf
 
 The chains are mixing:
 
-#+BEGIN_SRC R :session *R* :exports both :results graphics :file samples_6.png :width 800 :height 400 :res 80
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file plots/samples_6.png :width 800 :height 400 :res 80
 par(mfrow=c(2,1), mar=c(2, 1, 1, 1))
 plot(ml, ask=F, auto.layout=F)
 #+END_SRC
 
 #+RESULTS:
-[[file:samples_6.png]]
+[[file:plots/samples_6.png]]
 
 
 * Results
@@ -620,7 +620,7 @@ np1:active:ic1 -0.7409 -0.5142 -0.40286 -0.29114 -0.08598
 
 Plot of the parameter estimates with 95% credible intervals:
 
-#+BEGIN_SRC R :session *R* :exports both :results graphics :file parameter_estimates.png :width 600 :height 300 :res 80
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file plots/parameter_estimates.png :width 600 :height 300 :res 80
 plot.estimates <- function(x) {
   if (class(x) != "summary.mcmc")
     x <- summary(x)
@@ -641,7 +641,7 @@ plot.estimates(ml)
 #+END_SRC
 
 #+RESULTS:
-[[file:parameter_estimates.png]]
+[[file:plots/parameter_estimates.png]]
 
 Yay, the three way interaction is significant! But note that we can't really evaluate other effects because the model doesn't have the corresponding random slopes.
 
