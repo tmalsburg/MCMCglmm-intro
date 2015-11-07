@@ -19,28 +19,31 @@ load("data/models.Rda")
 d <- read.table("data/data.tsv", sep="\t", head=T)
 
 head(d)
+#+END_SRC
+
+#+RESULTS:
+:   subject item  a  b  c p
+: 1       1    1 -1  1 -1 0
+: 2       1    3  1 -1 -1 1
+: 3       1    5 -1  1 -1 1
+: 4       1    7  1 -1 -1 1
+: 5       1    9 -1  1 -1 0
+: 6       1   11 -1 -1 -1 0
+
+#+BEGIN_SRC R :session *R* :exports both :results output
 summary(d)
 #+END_SRC
 
 #+RESULTS:
-#+begin_example
-  subject item  a  b  c p
-1       1    1 -1  1 -1 0
-2       1    3  1 -1 -1 1
-3       1    5 -1  1 -1 1
-4       1    7  1 -1 -1 1
-5       1    9 -1  1 -1 0
-6       1   11 -1 -1 -1 0
-    subject           item             a                 b                  c                 p        
- Min.   : 1.00   Min.   : 1.00   Min.   :-1.0000   Min.   :-1.00000   Min.   :-1.0000   Min.   :0.000  
- 1st Qu.:19.00   1st Qu.: 9.00   1st Qu.:-1.0000   1st Qu.:-1.00000   1st Qu.:-1.0000   1st Qu.:0.000  
- Median :36.00   Median :18.00   Median : 1.0000   Median :-1.00000   Median :-1.0000   Median :1.000  
- Mean   :35.89   Mean   :18.35   Mean   : 0.1421   Mean   :-0.02338   Mean   :-0.1241   Mean   :0.571  
- 3rd Qu.:54.00   3rd Qu.:27.25   3rd Qu.: 1.0000   3rd Qu.: 1.00000   3rd Qu.: 1.0000   3rd Qu.:1.000  
- Max.   :71.00   Max.   :36.00   Max.   : 1.0000   Max.   : 1.00000   Max.   : 1.0000   Max.   :1.000
-#+end_example
+:     subject           item             a                 b                  c                 p        
+:  Min.   : 1.00   Min.   : 1.00   Min.   :-1.0000   Min.   :-1.00000   Min.   :-1.0000   Min.   :0.000  
+:  1st Qu.:19.00   1st Qu.: 9.00   1st Qu.:-1.0000   1st Qu.:-1.00000   1st Qu.:-1.0000   1st Qu.:0.000  
+:  Median :36.00   Median :18.00   Median : 1.0000   Median :-1.00000   Median :-1.0000   Median :1.000  
+:  Mean   :35.89   Mean   :18.35   Mean   : 0.1421   Mean   :-0.02338   Mean   :-0.1241   Mean   :0.571  
+:  3rd Qu.:54.00   3rd Qu.:27.25   3rd Qu.: 1.0000   3rd Qu.: 1.00000   3rd Qu.: 1.0000   3rd Qu.:1.000  
+:  Max.   :71.00   Max.   :36.00   Max.   : 1.0000   Max.   : 1.00000   Max.   : 1.0000   Max.   :1.000
 
-The experiment had a 2×2×2 design and the factors were ~a~, ~b~, and ~c~.[fn::The description of the experiment is censored because the study is not yet published.  We might add more details once that has happened.]  ~c~ was manipulated between items.  All three factors are coded using -1 and 1.  There were 71 subjects and 36 items, and each subject saw one version of each item.  The dependent variable indicates for each trial whether or not the participant used a pronoun in his description of a visual scene (1 if a pronoun was used, 0 otherwise). 
+The experiment had a 2×2×2 design and the factors were ~a~, ~b~, and ~c~.  (The description of the experiment is censored because the study is not yet published.  We might add more details once that has happened.)  The factors ~a~ and ~b~ were within-item and ~c~ was between-items.  All three factors are coded using -1 and 1.  There were 71 subjects and 36 items, and each subject saw one version of each item.  The dependent variable indicates for each trial whether or not the participant used a pronoun in his description of a visual scene (1 if a pronoun was used, 0 otherwise). 
 
 Proportions of pronoun responses per cell of the design:
 
@@ -286,6 +289,7 @@ Below you see the definition of the maximal model corresponding to the first lme
 
 #+BEGIN_SRC R
 library(MCMCglmm)
+set.seed(14)
 
 prior1 <- list(
   R=list(V=1, n=1),
@@ -336,32 +340,32 @@ Sample size per chain = 1000
 1. Empirical mean and standard deviation for each variable,
    plus standard error of the mean:
 
-                Mean     SD Naive SE Time-series SE
-(Intercept)  1.06467 0.4362 0.013794        0.05507
-a            2.87757 0.2384 0.007538        0.02883
-b            0.03672 0.2239 0.007082        0.05854
-c           -0.21483 0.1927 0.006095        0.03901
-a:b          1.03998 0.2137 0.006756        0.04651
-a:c         -0.39566 0.2087 0.006599        0.06426
-b:c         -0.87028 0.2463 0.007788        0.06389
-a:b:c       -0.56254 0.2689 0.008503        0.10538
+               Mean     SD Naive SE Time-series SE
+(Intercept)  1.3475 0.4189 0.013246        0.06731
+a            3.1882 0.2967 0.009382        0.06020
+b           -0.2202 0.2300 0.007275        0.06802
+c            0.0577 0.2299 0.007271        0.05356
+a:b          0.8467 0.3243 0.010257        0.13246
+a:c         -0.2605 0.2454 0.007759        0.09630
+b:c         -1.1221 0.2007 0.006348        0.03561
+a:b:c       -0.9962 0.2921 0.009238        0.10529
 
 2. Quantiles for each variable:
 
-               2.5%      25%      50%      75%    97.5%
-(Intercept)  0.1912  0.76983  1.06614  1.36253  1.89765
-a            2.3983  2.72235  2.86897  3.03189  3.34629
-b           -0.4395 -0.09803  0.04775  0.18561  0.45594
-c           -0.5754 -0.35058 -0.21353 -0.07887  0.16343
-a:b          0.6850  0.90718  1.01176  1.13917  1.60610
-a:c         -0.8759 -0.50379 -0.38721 -0.26557 -0.02579
-b:c         -1.3076 -1.05450 -0.87804 -0.69534 -0.39409
-a:b:c       -1.0295 -0.76754 -0.56468 -0.37678 -0.01668
+                2.5%     25%      50%      75%   97.5%
+(Intercept)  0.52905  1.0558  1.35092  1.63646  2.2106
+a            2.61218  2.9793  3.19866  3.40216  3.7413
+b           -0.61128 -0.3816 -0.24456 -0.06253  0.2465
+c           -0.33693 -0.1002  0.02712  0.19129  0.5865
+a:b          0.01218  0.6840  0.88057  1.06400  1.3636
+a:c         -0.71437 -0.4479 -0.25036 -0.07384  0.1743
+b:c         -1.52459 -1.2596 -1.10782 -0.98058 -0.7350
+a:b:c       -1.50290 -1.2142 -1.01716 -0.78711 -0.4160
 #+end_example
 
 * Plotting the samples
 
-One way to get a sense of whether the resulting samples are an accurate representation of the true posterior is to plot them.  In the panels on the left, we see the traces of the parameters showing which values the parameters assumed throughout the sampling process; the index of the sample is on the x-axis (starting with 3000 because we discarded the first 3000 samples) and the value of the parameter the y-axis.  In the panels on the right, we see the distribution of the values that the parameters assumed, i.e. the posteriors.
+One way to get a sense of whether the samples drawn by MCMCglmm are an accurate representation of the true posterior is to plot them.  In the panels on the left, we see the traces of the parameters showing which values the parameters assumed throughout the sampling process; the index of the sample is on the x-axis (starting with 3000 because we discarded the first 3000 samples) and the value of the parameter in that sample is on the y-axis.  In the panels on the right, we see the distribution of the values that the parameters assumed over the course of the sampling process, i.e. the posterior.
 
 #+BEGIN_SRC R :session *R* :results graphics :exports both :file plots/samples_1.png :width 800 :height 1000 :res 100
 par(mfrow=c(8,2), mar=c(2,2,1,0))
@@ -551,25 +555,25 @@ gelman.diag(ml)
 #+begin_example
 Potential scale reduction factors:
 
-               Point est. Upper C.I.
-(Intercept)          1.00       1.00
-np1                  1.00       1.01
-active               1.00       1.01
-ic1                  1.00       1.01
-np1:active           1.01       1.02
-np1:ic1              1.01       1.02
-active:ic1           1.00       1.01
-np1:active:ic1       1.00       1.00
+            Point est. Upper C.I.
+(Intercept)       1.01       1.02
+a                 1.01       1.02
+b                 1.00       1.01
+c                 1.01       1.03
+a:b               1.01       1.03
+a:c               1.00       1.01
+b:c               1.00       1.00
+a:b:c             1.01       1.04
 
 Multivariate psrf
 
-1.01
+1.02
 #+end_example
 
 The chains are mixing:
 
-#+BEGIN_SRC R :session *R* :exports both :results graphics :file plots/samples_6.png :width 800 :height 400 :res 80
-par(mfrow=c(2,1), mar=c(2, 1, 1, 1))
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file plots/samples_6.png :width 800 :height 1000 :res 100
+par(mfrow=c(8,2), mar=c(2, 1, 1, 1))
 plot(ml, ask=F, auto.layout=F)
 #+END_SRC
 
@@ -594,27 +598,27 @@ Sample size per chain = 2000
 1. Empirical mean and standard deviation for each variable,
    plus standard error of the mean:
 
-                   Mean     SD Naive SE Time-series SE
-(Intercept)     0.88760 0.3223 0.003603       0.006139
-np1             2.16357 0.1797 0.002009       0.006752
-active         -0.12868 0.1550 0.001733       0.004029
-ic1            -0.07231 0.1675 0.001873       0.004531
-np1:active      0.63445 0.1616 0.001806       0.004143
-np1:ic1        -0.09042 0.1530 0.001710       0.004085
-active:ic1     -0.55118 0.1631 0.001824       0.005493
-np1:active:ic1 -0.40531 0.1670 0.001867       0.004164
+                Mean     SD Naive SE Time-series SE
+(Intercept)  0.87581 0.3205 0.003583       0.005734
+a            2.15269 0.1703 0.001905       0.005747
+b           -0.13405 0.1549 0.001732       0.004207
+c           -0.05516 0.1635 0.001828       0.004367
+a:b          0.62410 0.1614 0.001804       0.004129
+a:c         -0.09112 0.1524 0.001703       0.004033
+b:c         -0.54022 0.1585 0.001772       0.004961
+a:b:c       -0.38862 0.1678 0.001876       0.004331
 
 2. Quantiles for each variable:
 
-                  2.5%     25%      50%      75%    97.5%
-(Intercept)     0.2665  0.6711  0.88482  1.10185  1.53502
-np1             1.8305  2.0392  2.15814  2.28096  2.52878
-active         -0.4257 -0.2350 -0.13138 -0.02418  0.17897
-ic1            -0.4075 -0.1823 -0.07208  0.04047  0.24947
-np1:active      0.3239  0.5256  0.63160  0.74096  0.95645
-np1:ic1        -0.4014 -0.1895 -0.08847  0.01365  0.20370
-active:ic1     -0.8830 -0.6565 -0.54657 -0.43921 -0.24609
-np1:active:ic1 -0.7409 -0.5142 -0.40286 -0.29114 -0.08598
+               2.5%     25%      50%      75%    97.5%
+(Intercept)  0.2656  0.6522  0.87330  1.09195  1.51079
+a            1.8376  2.0329  2.14534  2.26614  2.50369
+b           -0.4252 -0.2424 -0.13610 -0.02909  0.17210
+c           -0.3819 -0.1639 -0.05209  0.05814  0.25470
+a:b          0.3135  0.5162  0.62068  0.73132  0.94144
+a:c         -0.3883 -0.1931 -0.08977  0.01287  0.20831
+b:c         -0.8705 -0.6417 -0.53590 -0.43160 -0.24013
+a:b:c       -0.7389 -0.4974 -0.38380 -0.27406 -0.07854
 #+end_example
 
 Plot of the parameter estimates with 95% credible intervals:
