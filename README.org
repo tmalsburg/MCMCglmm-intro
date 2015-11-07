@@ -1,0 +1,382 @@
+#+TITLE: Using MCMCglmm to implement lme4-like mixed models
+#+AUTHOR: Titus von der Malsburg, Meilin Zhan
+#+EMAIL: malsburg@ucsd.edu, mezhan@mail.ucsd.edu
+#+DATE: 11/06/2015
+
+* What and why?
+Sometimes (g)lmer fails to converge even if we simplify the random effects structure.  This can be the case if the model is too complex to be supported by the data (c.f., Bates, Kliegl, Vasishth, Bayen, 2015).  Bayesian mixed models can help in this situation because mild priors on the random effects parameters constrain the search space, i.e. the model fitting process does not have to consider nonsensical parameterizations.  MCMCglmm is an R package for fitting Bayesian mixed models and its use is roughly similar to lme4’s.  This tutorial aims to get you started with MCMCglmm and shows how the Bayesian analogue of an lme4 model can be implemented with MCMCglmm.  Note that this is not an intro to Bayesian mixed models or MCMC sampling and assumes that you are familiar with the basic ideas behind these concepts.  The aim is merely to shows how the MCMCglmm package can be used to implement lme4-type mixed models.
+
+* Overview
+
+To illustrate the use of MCMCglmm, we use a real data set from a language production experiment.  We first attempt a model using lme4 and we will see how and why this fails.  Then we implement an analogous model using MCMCglmm.  MCMCglmm does not perform automatic convergence checks like lme4 does, which means that we have to handle this ourselves.  This process in unfortunately a little messy because telling whether the model converged with certainty requires knowledge that we don’t have.  For this reasons, we have to make use of a number of heuristics.  We first use some subjective heuristics and then a somewhat more principled criterion to check convergence (Gelman, Rubin, 1992).  Finally, we evaluate the converged model with respect to the research question.
+
+* The data and design
+
+#+BEGIN_SRC R :session *R* :exports none
+load("models.Rda")
+#+END_SRC
+
+
+#+BEGIN_SRC R :session *R* :exports both :results output
+d <- read.table("data.tsv", sep="\t", head=T)
+
+head(d)
+summary(d)
+#+END_SRC
+
+The experiment had a 2×2×2 design and the factors were ~a~, ~b~, and ~c~.[fn::The description of the experiment is censored because the study is not yet published.  We might add more details once that has happened.]  ~c~ was manipulated between items.  All three factors are coded using -1 and 1.  There were 71 subjects and 36 items, and each subject saw one version of each item.  The dependent variable indicates for each trial whether or not the participant used a pronoun in his description of a visual scene (1 if a pronoun was used, 0 otherwise). 
+
+Proportions of pronoun responses per cell of the design:
+
+#+BEGIN_SRC R :session *R* :exports both :results output
+with(d, tapply(p, list(a, b, c), mean))
+#+END_SRC
+
+Looking at the contingency table, we see that some cells of the design had very few measurements.  This was expected and follows from the production nature of the experiment: the factors were not experimentally controlled but properties of the utterance that the participants produced.
+
+#+BEGIN_SRC R :session *R* :exports both :results output
+with(d, table(a, b, c))
+#+END_SRC
+
+* Attempt to model the data with lme4
+
+In principle, lme4 can deal with unbalanced data sets but the low number of data points means that it is hard to estimate some of the effects.  In the present scenario, this is particularly a problem because the main question was whether the three-way interaction indicated in the following plot was significant or not.
+
+#+BEGIN_SRC R :session *R* :results graphics :exports both :file proportions_by_condition.png :width 400 :height 400 :res 100
+plot(0:10, 0:10, t="n")
+text(5, 5, labels="TODO: Add the plot.")
+#+END_SRC
+
+We start with the maximal model justified by the design:
+
+#+BEGIN_SRC R :session *R* :export code
+library(lme4)
+#+END_SRC
+
+#+BEGIN_SRC R
+
+m1 <- glmer(p ~  (a + b + c)^3            +
+                ((a + b + c)^3 | subject) + 
+                ((a + b    )^2 | item),
+            data=d, family="binomial")
+#+END_SRC
+
+A note on the formula notation used above: ~(a + b + c)^3~ is a little known alternative notation for ~a * b * c~.  So it gives us the main effects, the two-way interactions, and the three-way interaction of the three factors.  The benefit of this notation is that it is more convenient during the design stage of the model when we often chance the structure of the model.  For example if we want to exclude the three-way interaction, we can simply replace the 3 by a 2: ~(a + b + c)^2~.  So what the exponent says is up to which level we want interactions.
+
+The model above is the most complex model that can be fit given the design.  The model has fixed effects terms for all three factors and all their interactions.  Following Barr, Levy, Scheepers, Tily (2013), there are also random slopes for all these factors.  The exception is ~c~ which was manipulated between items, so there can’t be item-slopes for that factor or any interaction in which this factor is involved.
+
+The attempt to fit this model takes quite a bit of time (~15 minutes on my machine) and ultimately fails with one of the most colorful collection of warning messages I have ever seen from lme4:
+
+#+BEGIN_EXAMPLE
+Warning messages:
+1: In commonArgs(par, fn, control, environment()) :
+  maxfun < 10 * length(par)^2 is not recommended.
+2: In optwrap(optimizer, devfun, start, rho$lower, control = control,  :
+  convergence code 1 from bobyqa: bobyqa -- maximum number of function evaluations exceeded
+3: In (function (fn, par, lower = rep.int(-Inf, n), upper = rep.int(Inf,  :
+  failure to converge in 10000 evaluations
+Warning messages:
+1: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+  unable to evaluate scaled gradient
+2: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+  Model failed to converge: degenerate  Hessian with 4 negative eigenvalues
+#+END_EXAMPLE
+
+Ben Bolker somewhere pointed out that the occurrence of a warning does not strictly imply that the model is degenerate, however, one of the above messages explicitly says that convergence failed and examining the model fit gives us good reasons to belief that: 
+
+#+BEGIN_SRC R :session *R* :exports both :results output
+summary(m1)
+#+END_SRC
+
+The estimates of the correlations of random effects are all close to -1 or 1 and all fixed effects and interactions are solidly significant, which is both highly implausible.  The standard thing to do in this situation is to simplify the model until it converges.  According to Barr et al., one constraint in doing do is that the random slopes for the effect of interest (the effect about which we want to make inferences, in this case the three-way interaction ~a:b:c~) need to be in the model, otherwise there may be an inflated chance of getting a false positive effect.  Under this constraint, the simplest possible model is the following:
+
+#+BEGIN_SRC R
+m2 <- glmer(p ~ (a + b + c)^3 +
+                (0 + a : b : c |subject) + 
+                (0 + a : b     |item),
+            data=d, family="binomial")
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+Warning messages:
+1: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+  unable to evaluate scaled gradient
+2: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+  Model failed to converge: degenerate  Hessian with 1 negative eigenvalues
+#+END_EXAMPLE
+
+Still, the model fails to converge.  The results (see below) look more reasonable but we can’t rely on them.  Since we are already using the simplest allowed model, we reached the end of the line of what we can do with lme4.
+
+#+BEGIN_SRC R :session *R* :exports results :results output
+summary(m2)
+#+END_SRC
+
+As indicated above, Bayesian mixed models may help in this situation.  However, before we embark on an Bayesian adventure, we should consider a much simpler solution: the t-test!  The t-test can be used to test whether the difference between two sets of data is significant.  Since a three-way interaction is nothing else but a difference of differences of differences, the t-test is perfectly appropriate.  The appeal of this is of course that the t-test is simple and relatively fool-proof; there is no risk of convergence errors.  The approach would be to calculate the differences of differences on a by-subject bases, and to apply the t-test to these values.  However, there is one catch.  Our data are so sparse that the vast majority of subjects (62 out of 71) do not have measurements in all eight cells of the design.  Hence we can’t calculate the necessary difference values for most subjects. 
+
+* Using MCMCglmm
+
+The specification of a model in MCMCglmm is relatively similar to lme4.  The are two main differences.  First, since MCMCglmm is Bayesian, we have to deal with the priors.  Second, we have to set some parameters for the model fitting process manually.
+
+Below you see the definition of the maximal model corresponding to the first lme4 model above (~m1~). 
+
+#+BEGIN_SRC R
+library(MCMCglmm)
+
+prior1 <- list(
+  R=list(V=1, n=1),
+  G=list(G1=list(V        = diag(8),
+                 n        = 8,
+                 alpha.mu = rep(0, 8),
+                 alpha.V  = diag(8)*25^2),
+         G2=list(V        = diag(4),
+                 n        = 4,
+                 alpha.mu = rep(0, 4),
+                 alpha.V  = diag(4)*25^2)))
+
+m3 <- MCMCglmm(p ~ (a + b + c)^3,
+                 ~ us(1 + (a + b + c)^3):subject +
+                   us(1 + (a + b    )^2):item,
+               data   = d,
+               family = "categorical",
+               prior  = prior1,
+               thin   = 1,
+               burnin = 3000,
+               nitt   = 4000)
+#+END_SRC
+
+The variable ~prior1~ contains the specification of the priors.  Priors can be defined for the residuals, the fixed effects, and the random effects.  Here we only specify priors for the residuals (~R~) and the random effects (~G~).  The distribution used for the priors is the inverse Wishart distribution, a probability distribution on covariance matrices.  The univariate special case of the inverse-Wishart distribution is the inverse-gamma distribution.  This form is used as the prior for the variance of the residuals.  V is the scale matrix of the inverse-Wishart and equals 1 because we want the univariate case. ~n~ is the degrees of freedom parameter and is set to 1 which gives us the weakest possible prior.
+
+~G1~ is the prior definition for the eight subject random effects. V=8 because we have eight random effects for subjects (intercept, the three factors, their three two-way interactions, and one three-way interaction) and the covariance matrix therefore needs 8×8 entries.  Again, ~n~ is set to give us the weakest prior (the lower bound for ~n~ is the number of dimensions).  Further, we have parameters ~alpha.mu~ and ~alpha.V~.  These specify an additional prior which is used for parameter expansion, basically a trick to improve the rate of convergence.  See Hadfield (2010) and Hadfield’s course notes on MCMCglmm (included in the R package) for details.
+
+~G2~ defines the prior for the item random effects and follows the same scheme.  The only differences is that we have only four item random effects instead of the eight for subjects.  In sum, these definitions give is mild priors for the residuals and random effects.
+
+Next, we need to specify the family of the dependent variable.  For the glmer model this was ~binomial~, but MCMCglmm uses ~categorical~.
+
+Finally, we need to set some parameters that control the MCMC sampling process.  These are ~nitt~, ~burnin~, and ~thin~.  ~nitt~ is set to 4000 and defines how many samples we want to produce overall.  ~burnin~ is set to 3000 and defines the length (in samples) of the so-called burn-in period after which we start collecting samples.  The idea behind this is that the first samples may be influenced by the random starting point of the sampling process and may therefore not represent the true distribution.  Ideally, consecutive samples would be statistically independent, but that is rarely the case in practice.  Thinning can be used to reduce the resulting autocorrelation and is controlled by the ~thin~ parameter. ~thin=n~ means that we want to keep every n-th sample.  Here we set ~thin~ to 1.  In sum, these parameter settings give us 1000 usable samples (4000 - 3000).
+
+Below we see the posterior means and quantiles obtained with the above model.  The pattern of results looks qualitatively similar that in the glmer model but there are considerable numerical differences.  However, as mentioned earlier, MCMCglmm does not check convergence and therefore these results may be unreliable.
+ 
+#+BEGIN_SRC R :session *R* :exports both :results output
+summary(m3$Sol)
+#+END_SRC
+
+* Plotting the samples
+
+One way to get a sense of whether the resulting samples are an accurate representation of the true posterior is to plot them.  In the panels on the left, we see the traces of the parameters showing which values the parameters assumed throughout the sampling process; the index of the sample is on the x-axis (starting with 3000 because we discarded the first 3000 samples) and the value of the parameter the y-axis.  In the panels on the right, we see the distribution of the values that the parameters assumed, i.e. the posteriors.
+
+#+BEGIN_SRC R :session *R* :results graphics :exports both :file samples_1.png :width 800 :height 1000 :res 100
+par(mfrow=c(8,2), mar=c(2,2,1,0))
+plot(m3$Sol, auto.layout=F)
+#+END_SRC
+
+There are a number of signals in these plots suggesting that our sample may not be good enough.  First, there is high autocorrelation, which means that samples tend to have similar parameter values as the directly preceding samples.  Second, the traces of the parameters are not /stationary/, which means that the sampling process dwells in one part of the parameter space and then suddenly visits other parts of the parameter space.  This can be observed at around 3900 samples where the trace of ~c~ suddenly moves to more negative values and the trace of ~a:b~ moves to more positive values (see also ~a:b:c~ and ~b~).  Both taken together these properties suggest that our sample is not yet a good-enough approximation of the true posterior distribution.  Think about it this way: looking at these plots, is it likely that the density plots on the right would change if we would continue taking samples?  Yes, it is because there may be more sudden moves to other parts of the parameter space like that at around 3900.  Or the sampling process might dwell in the position at 4000 for a longer time leading to shift in the distributions.  For example the density plot of ~a:b~ has a long tail coming from the last ~100 samples and this tail might have gotten fatter if we hadn’t ended the sampling process at 4000.  As long as these density plots keep changing, the sampling process has not converged and we don’t have a stable posterior.  Ideally, what we would like to have is something like the following:
+
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file samples_2.png :width 800 :height 125 :res 60
+par(mfrow=c(1,2), mar=c(2,2,1,0))
+x <- rnorm(1000)
+plot(3001:4000, x, t="l", main="Trace of x")
+plot(density(x), main="Density of x")
+#+END_SRC
+
+In this trace plot of random data, there is no autocorrelation of consecutive samples and the distribution of samples is stationary.  It is very likely that taking more samples wouldn’t shift the distribution substantially.  Hence, if we see a plot like this, we would be more confident that our posterior is a good approximation of the true posterior.
+
+There are several things that we can do in order to improve our sample.  We can collect more samples until all parts of the parameter space have been visited approximately the right amount of times.  And we can try to reduce the autocorrelation of the samples in order to avoid that some parts of the parameter space are over-represented.
+
+# Wiping the floor metaphor useful or not?
+
+What thinning factor?  Plot of the autocorrelation function for each parameter.
+
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file autocorrelation_1.png :width 800 :height 600 :res 100
+plot.acfs <- function(x) {
+  n <- dim(x)[2]
+  par(mfrow=c(ceiling(n/2),2), mar=c(2,2,3,0))
+  for (i in 1:n) {
+    acf(x[,i], lag.max=100, main=colnames(x)[i])
+    grid()
+  }
+}
+plot.acfs(m3$Sol)
+#+END_SRC
+
+Use thinning factor of 20 to get rid of some of the autocorrelation:
+
+#+BEGIN_SRC R
+m4 <- MCMCglmm(p ~ (a + b + c)^3,
+                 ~ us(1 + (a + b + c)^3):subject +
+                   us(1 + (a + b    )^2):item,
+               data   = d,
+               family = "categorical",
+               prior  = prior1,
+               thin   = 20,
+               burnin = 3000,
+               nitt   = 23000)
+#+END_SRC
+
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file samples_3.png :width 800 :height 400 :res 100
+chain.plot <- function(x) {
+  n <- dim(x)[2]
+  par(mfrow=c(ceiling(n/2),2), mar=c(0,0.5,1,0.5))
+  for (i in 1:n) {
+    plot(as.numeric(x[,i]), t="l", main=colnames(x)[i], xaxt="n", yaxt="n")
+  }
+}
+chain.plot(m4$Sol)
+#+END_SRC
+
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file autocorrelation_2.png :width 800 :height 600 :res 100
+plot.acfs(m4$Sol)
+#+END_SRC
+
+Ok, we need to simplify the model.  This model had only random intercepts and the random sloped for the effects of interest:
+
+#+BEGIN_SRC R
+prior2 <- list(
+  R=list(V=1, n=1),
+  G=list(G1=list(V        = diag(2),
+                 n        = 2,
+                 alpha.mu = rep(0, 2),
+                 alpha.V  = diag(2)*25^2),
+         G2=list(V        = diag(2),
+                 n        = 2,
+                 alpha.mu = rep(0, 2),
+                 alpha.V  = diag(2)*25^2)))
+
+m5 <- MCMCglmm(p ~ (a + b + c)^3,
+                 ~ us(1 + a : b : c):subject +
+                   us(1 + a : b    ):item,
+               data   = d,
+               family = "categorical",
+               prior  = prior2,
+               thin   = 1,             # No thinning!
+               burnin = 3000,
+               nitt   = 4000)
+#+END_SRC
+
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file samples_4.png :width 800 :height 400 :res 100
+chain.plot(m5$Sol)
+#+END_SRC
+
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file autocorrelation_3.png :width 800 :height 600 :res 100
+plot.acfs(m5$Sol)
+#+END_SRC
+
+Still too much autocorrelation but this time thinning may help:
+
+#+BEGIN_SRC R
+m6 <- MCMCglmm(p ~ (a + b + c)^3,
+                 ~ us(1 + a : b : c):subject +
+                   us(1 + a : b    ):item,
+               data   = d,
+               family = "categorical",
+               prior  = prior2,
+               thin   = 20,
+               burnin = 3000,
+               nitt   = 23000)
+#+END_SRC
+
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file samples_5.png :width 800 :height 400 :res 100
+chain.plot(m6$Sol)
+#+END_SRC
+
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file autocorrelation_4.png :width 800 :height 600 :res 100
+plot.acfs(m6$Sol)
+#+END_SRC
+
+Looks good but a more formal criterion would be nice.
+
+** Gelman-Rubin criterion
+
+Running multiple chains so we can calculate the Gelman-Rubin criterion:
+
+#+BEGIN_SRC R
+library(parallel)
+
+ml <- mclapply(1:4, function(i) {
+  MCMCglmm(p ~ (a + b + c)^3,
+             ~ us(1 + a : b : c):subject +
+               us(1 + a : b    ):item,
+           data   = d,
+           family = "categorical",
+           prior  = prior2,
+           thin   = 20,
+           burnin = 3000,
+           nitt   = 43000)
+}, mc.cores=4)
+
+ml <- lapply(ml, function(m) m$Sol)
+ml <- do.call(mcmc.list, ml)
+#+END_SRC
+
+The ~coda~ package contains lots of useful stuff and also an implementation of the Gelman-Rubin criterion along with plots showing how this criterion develops as we collect more samples:
+
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file gelman_rubin.png :width 800 :height 600 :res 90
+library(coda)
+
+par(mfrow=c(4,2), mar=c(2,2,1,0))
+gelman.plot(ml, auto.layout=F)
+#+END_SRC
+
+#+BEGIN_SRC R :session *R* :exports both :results output
+gelman.diag(ml)
+#+END_SRC
+
+The intuition captured by the Gelman-Rubin criterion is basically that the model is good enough if the four chains “mix” which basically means that they neatly overlap.
+
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file samples_X.png :width 800 :height 400 :res 80
+par(mfrow=c(2,1), mar=c(2, 0, 2, 0))
+plot(ml, auto.layout=F)
+#+END_SRC
+
+This all looks very promising and we can finally have a look at the results.
+
+* Results
+
+Summary of the chains:
+
+#+BEGIN_SRC R
+sml <- summary(ml)
+sml
+#+END_SRC
+
+Plot of the parameter estimates with 95% credible intervals:
+
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file parameter_estimates.png :width 600 :height 300 :res 80
+plot.estimates <- function(x) {
+  if (class(x) != "summary.mcmc")
+    x <- summary(x)
+  n <- dim(x$statistics)[1]
+  par(mar=c(2, 7, 4, 1))
+  plot(x$statistics[,1], n:1,
+       yaxt="n", ylab="",
+       xlim=range(x$quantiles)*1.2,
+       pch=19,
+       main="Posterior means and 95% credible intervals")
+  grid()
+  axis(2, at=n:1, rownames(x$statistics), las=2)
+  arrows(x$quantiles[,1], n:1, x$quantiles[,5], n:1, code=0)
+  abline(v=0, lty=2)
+}
+
+plot.estimates(ml)
+#+END_SRC
+
+Yay, the three way interaction is significant! But note that we can't really evaluate other effects because the model doesn't have the corresponding random slopes.
+
+* References
+
+- Bates, D., Kliegl, R., Vasishth, S., & Baayen,
+  H. (2015). Parsimonious mixed models. Manuscript published on arXiv.
+  http://arxiv.org/abs/1506.04967
+- Wu, S., Barr, D. J., Gann, T. M., & Keysar, B. (2013). How culture
+  influences perspective taking: Differences in correction, not
+  integration. Frontiers in Human Neuroscience, 7(),
+  822. http://dx.doi.org/10.3389/fnhum.2013.00822
+- Gelman, A., & Rubin, D. B. (1992). Inference from iterative
+  simulation using multiple sequences. Statistical Science, 7(4),
+  457–472.
+- Hadfield, J. (2010). MCMC methods for multi-response generalized
+  linear mixed models: the MCMCglmm R package. Journal of Statistical
+  Software, 33(1), 1–22. http://dx.doi.org/10.18637/jss.v033.i02
+
+
+
