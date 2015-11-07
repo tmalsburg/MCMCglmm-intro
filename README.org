@@ -16,13 +16,30 @@ To illustrate the use of MCMCglmm, we use a real data set from a language produc
 load("models.Rda")
 #+END_SRC
 
-
 #+BEGIN_SRC R :session *R* :exports both :results output
 d <- read.table("data.tsv", sep="\t", head=T)
 
 head(d)
 summary(d)
 #+END_SRC
+
+#+RESULTS:
+#+begin_example
+  subject item  a  b  c p
+1       1    1 -1  1 -1 0
+2       1    3  1 -1 -1 1
+3       1    5 -1  1 -1 1
+4       1    7  1 -1 -1 1
+5       1    9 -1  1 -1 0
+6       1   11 -1 -1 -1 0
+    subject           item             a                 b                  c                 p        
+ Min.   : 1.00   Min.   : 1.00   Min.   :-1.0000   Min.   :-1.00000   Min.   :-1.0000   Min.   :0.000  
+ 1st Qu.:19.00   1st Qu.: 9.00   1st Qu.:-1.0000   1st Qu.:-1.00000   1st Qu.:-1.0000   1st Qu.:0.000  
+ Median :36.00   Median :18.00   Median : 1.0000   Median :-1.00000   Median :-1.0000   Median :1.000  
+ Mean   :35.89   Mean   :18.35   Mean   : 0.1421   Mean   :-0.02338   Mean   :-0.1241   Mean   :0.571  
+ 3rd Qu.:54.00   3rd Qu.:27.25   3rd Qu.: 1.0000   3rd Qu.: 1.00000   3rd Qu.: 1.0000   3rd Qu.:1.000  
+ Max.   :71.00   Max.   :36.00   Max.   : 1.0000   Max.   : 1.00000   Max.   : 1.0000   Max.   :1.000
+#+end_example
 
 The experiment had a 2×2×2 design and the factors were ~a~, ~b~, and ~c~.[fn::The description of the experiment is censored because the study is not yet published.  We might add more details once that has happened.]  ~c~ was manipulated between items.  All three factors are coded using -1 and 1.  There were 71 subjects and 36 items, and each subject saw one version of each item.  The dependent variable indicates for each trial whether or not the participant used a pronoun in his description of a visual scene (1 if a pronoun was used, 0 otherwise). 
 
@@ -32,11 +49,43 @@ Proportions of pronoun responses per cell of the design:
 with(d, tapply(p, list(a, b, c), mean))
 #+END_SRC
 
+#+RESULTS:
+#+begin_example
+, , -1
+
+          -1         1
+-1 0.2647059 0.2352941
+1  0.7234043 0.9577465
+
+, , 1
+
+         -1         1
+-1 0.420000 0.2000000
+1  0.875817 0.7829457
+#+end_example
+
 Looking at the contingency table, we see that some cells of the design had very few measurements.  This was expected and follows from the production nature of the experiment: the factors were not experimentally controlled but properties of the utterance that the participants produced.
 
 #+BEGIN_SRC R :session *R* :exports both :results output
 with(d, table(a, b, c))
 #+END_SRC
+
+#+RESULTS:
+#+begin_example
+, , c = -1
+
+    b
+a     -1   1
+  -1  34 238
+  1  282  71
+
+, , c = 1
+
+    b
+a     -1   1
+  -1 100 105
+  1  153 129
+#+end_example
 
 * Attempt to model the data with lme4
 
@@ -47,14 +96,18 @@ plot(0:10, 0:10, t="n")
 text(5, 5, labels="TODO: Add the plot.")
 #+END_SRC
 
+#+RESULTS:
+[[file:proportions_by_condition.png]]
+
 We start with the maximal model justified by the design:
 
 #+BEGIN_SRC R :session *R* :export code
 library(lme4)
 #+END_SRC
 
-#+BEGIN_SRC R
+#+RESULTS:
 
+#+BEGIN_SRC R
 m1 <- glmer(p ~  (a + b + c)^3            +
                 ((a + b + c)^3 | subject) + 
                 ((a + b    )^2 | item),
@@ -88,6 +141,72 @@ Ben Bolker somewhere pointed out that the occurrence of a warning does not stric
 summary(m1)
 #+END_SRC
 
+#+RESULTS:
+#+begin_example
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: binomial  ( logit )
+Formula: p ~ (np1 + active + ic1)^3 + ((np1 + active + ic1)^3 | subject) +      (np1 * active | item)
+   Data: Exp3_free
+
+     AIC      BIC   logLik deviance df.resid 
+  1015.5   1286.2   -453.7    907.5     1058 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-2.9524 -0.2471  0.0715  0.3325  3.3130 
+
+Random effects:
+ Groups  Name           Variance  Std.Dev. Corr                                     
+ subject (Intercept)    30.410930 5.51461                                           
+         np1            12.098270 3.47826   0.89                                    
+         active         10.382867 3.22225   0.97  0.96                              
+         ic1            15.047532 3.87911  -0.97 -0.96 -1.00                        
+         np1:active     14.146457 3.76118   0.97  0.95  0.98 -0.99                  
+         np1:ic1        11.313383 3.36354  -0.96 -0.96 -0.99  1.00 -1.00            
+         active:ic1     14.433649 3.79916  -0.96 -0.97 -1.00  1.00 -0.98  0.99      
+         np1:active:ic1 15.275932 3.90844  -0.95 -0.98 -0.99  0.99 -0.98  0.99  1.00
+ item    (Intercept)     0.079619 0.28217                                           
+         np1             0.086893 0.29478  -1.00                                    
+         active          0.006393 0.07995  -1.00  1.00                              
+         np1:active      0.026452 0.16264  -0.99  0.99  0.97                        
+Number of obs: 1112, groups:  subject, 71; item, 36
+
+Fixed effects:
+               Estimate Std. Error z value Pr(>|z|)    
+(Intercept)       3.764      1.484   2.537 0.011189 *  
+np1               5.260      1.403   3.750 0.000177 ***
+active            2.953      1.371   2.154 0.031274 *  
+ic1              -3.024      1.393  -2.171 0.029926 *  
+np1:active        3.756      1.387   2.707 0.006783 ** 
+np1:ic1          -3.296      1.378  -2.392 0.016774 *  
+active:ic1       -3.621      1.407  -2.574 0.010048 *  
+np1:active:ic1   -3.642      1.410  -2.583 0.009787 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) np1    active ic1    np1:ct np1:c1 actv:1
+np1          0.957                                          
+active       0.967  0.989                                   
+ic1         -0.980 -0.980 -0.986                            
+np1:active   0.980  0.980  0.983 -0.992                     
+np1:ic1     -0.968 -0.988 -0.993  0.984 -0.986              
+active:ic1  -0.974 -0.990 -0.991  0.987 -0.985  0.993       
+np1:actv:c1 -0.978 -0.984 -0.984  0.992 -0.990  0.986  0.987
+convergence code: 0
+unable to evaluate scaled gradient
+Model failed to converge: degenerate  Hessian with 4 negative eigenvalues
+failure to converge in 10000 evaluations
+
+Warning messages:
+1: In vcov.merMod(object, use.hessian = use.hessian) :
+  variance-covariance matrix computed from finite-difference Hessian is
+not positive definite or contains NA values: falling back to var-cov estimated from RX
+2: In vcov.merMod(object, correlation = correlation, sigm = sig) :
+  variance-covariance matrix computed from finite-difference Hessian is
+not positive definite or contains NA values: falling back to var-cov estimated from RX
+#+end_example
+
 The estimates of the correlations of random effects are all close to -1 or 1 and all fixed effects and interactions are solidly significant, which is both highly implausible.  The standard thing to do in this situation is to simplify the model until it converges.  According to Barr et al., one constraint in doing do is that the random slopes for the effect of interest (the effect about which we want to make inferences, in this case the three-way interaction ~a:b:c~) need to be in the model, otherwise there may be an inflated chance of getting a false positive effect.  Under this constraint, the simplest possible model is the following:
 
 #+BEGIN_SRC R
@@ -110,6 +229,53 @@ Still, the model fails to converge.  The results (see below) look more reasonabl
 #+BEGIN_SRC R :session *R* :exports results :results output
 summary(m2)
 #+END_SRC
+
+#+RESULTS:
+#+begin_example
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: binomial  ( logit )
+Formula: p ~ (np1 + active + ic1)^3 + (0 + np1:active:ic1 | subject) +      (0 + np1:active | item)
+   Data: Exp3_free
+
+     AIC      BIC   logLik deviance df.resid 
+  1133.9   1184.0   -556.9   1113.9     1102 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-8.4530 -0.5253  0.2503  0.5369  4.1687 
+
+Random effects:
+ Groups  Name           Variance  Std.Dev. 
+ subject np1:active:ic1 5.498e-01 0.7415049
+ item    np1:active     2.526e-07 0.0005026
+Number of obs: 1112, groups:  subject, 71; item, 36
+
+Fixed effects:
+                Estimate Std. Error z value Pr(>|z|)    
+(Intercept)     0.444294   0.113699   3.908 9.32e-05 ***
+np1             1.576301   0.118933  13.254  < 2e-16 ***
+active          0.062480   0.112740   0.554  0.57945    
+ic1            -0.008851   0.113678  -0.078  0.93794    
+np1:active      0.360923   0.111885   3.226  0.00126 ** 
+np1:ic1        -0.196345   0.112047  -1.752  0.07972 .  
+active:ic1     -0.537264   0.114899  -4.676 2.93e-06 ***
+np1:active:ic1 -0.209187   0.142544  -1.468  0.14223    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) np1    active ic1    np1:ct np1:c1 actv:1
+np1          0.235                                          
+active       0.253  0.545                                   
+ic1         -0.411 -0.194 -0.232                            
+np1:active   0.563  0.256  0.234 -0.631                     
+np1:ic1     -0.231 -0.428 -0.641  0.222 -0.246              
+active:ic1  -0.248 -0.640 -0.431  0.237 -0.234  0.565       
+np1:actv:c1 -0.492 -0.166 -0.176  0.443 -0.338  0.192  0.170
+convergence code: 0
+unable to evaluate scaled gradient
+Model failed to converge: degenerate  Hessian with 1 negative eigenvalues
+#+end_example
 
 As indicated above, Bayesian mixed models may help in this situation.  However, before we embark on an Bayesian adventure, we should consider a much simpler solution: the t-test!  The t-test can be used to test whether the difference between two sets of data is significant.  Since a three-way interaction is nothing else but a difference of differences of differences, the t-test is perfectly appropriate.  The appeal of this is of course that the t-test is simple and relatively fool-proof; there is no risk of convergence errors.  The approach would be to calculate the differences of differences on a by-subject bases, and to apply the t-test to these values.  However, there is one catch.  Our data are so sparse that the vast majority of subjects (62 out of 71) do not have measurements in all eight cells of the design.  Hence we can’t calculate the necessary difference values for most subjects. 
 
@@ -160,6 +326,40 @@ Below we see the posterior means and quantiles obtained with the above model.  T
 summary(m3$Sol)
 #+END_SRC
 
+#+RESULTS:
+#+begin_example
+
+Iterations = 3001:4000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 1000 
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+                Mean     SD Naive SE Time-series SE
+(Intercept)  1.06467 0.4362 0.013794        0.05507
+a            2.87757 0.2384 0.007538        0.02883
+b            0.03672 0.2239 0.007082        0.05854
+c           -0.21483 0.1927 0.006095        0.03901
+a:b          1.03998 0.2137 0.006756        0.04651
+a:c         -0.39566 0.2087 0.006599        0.06426
+b:c         -0.87028 0.2463 0.007788        0.06389
+a:b:c       -0.56254 0.2689 0.008503        0.10538
+
+2. Quantiles for each variable:
+
+               2.5%      25%      50%      75%    97.5%
+(Intercept)  0.1912  0.76983  1.06614  1.36253  1.89765
+a            2.3983  2.72235  2.86897  3.03189  3.34629
+b           -0.4395 -0.09803  0.04775  0.18561  0.45594
+c           -0.5754 -0.35058 -0.21353 -0.07887  0.16343
+a:b          0.6850  0.90718  1.01176  1.13917  1.60610
+a:c         -0.8759 -0.50379 -0.38721 -0.26557 -0.02579
+b:c         -1.3076 -1.05450 -0.87804 -0.69534 -0.39409
+a:b:c       -1.0295 -0.76754 -0.56468 -0.37678 -0.01668
+#+end_example
+
 * Plotting the samples
 
 One way to get a sense of whether the resulting samples are an accurate representation of the true posterior is to plot them.  In the panels on the left, we see the traces of the parameters showing which values the parameters assumed throughout the sampling process; the index of the sample is on the x-axis (starting with 3000 because we discarded the first 3000 samples) and the value of the parameter the y-axis.  In the panels on the right, we see the distribution of the values that the parameters assumed, i.e. the posteriors.
@@ -169,6 +369,9 @@ par(mfrow=c(8,2), mar=c(2,2,1,0))
 plot(m3$Sol, auto.layout=F)
 #+END_SRC
 
+#+RESULTS:
+[[file:samples_1.png]]
+
 There are a number of signals in these plots suggesting that our sample may not be good enough.  First, there is high autocorrelation, which means that samples tend to have similar parameter values as the directly preceding samples.  Second, the traces of the parameters are not /stationary/, which means that the sampling process dwells in one part of the parameter space and then suddenly visits other parts of the parameter space.  This can be observed at around 3900 samples where the trace of ~c~ suddenly moves to more negative values and the trace of ~a:b~ moves to more positive values (see also ~a:b:c~ and ~b~).  Both taken together these properties suggest that our sample is not yet a good-enough approximation of the true posterior distribution.  Think about it this way: looking at these plots, is it likely that the density plots on the right would change if we would continue taking samples?  Yes, it is because there may be more sudden moves to other parts of the parameter space like that at around 3900.  Or the sampling process might dwell in the position at 4000 for a longer time leading to shift in the distributions.  For example the density plot of ~a:b~ has a long tail coming from the last ~100 samples and this tail might have gotten fatter if we hadn’t ended the sampling process at 4000.  As long as these density plots keep changing, the sampling process has not converged and we don’t have a stable posterior.  Ideally, what we would like to have is something like the following:
 
 #+BEGIN_SRC R :session *R* :exports both :results graphics :file samples_2.png :width 800 :height 125 :res 60
@@ -177,6 +380,9 @@ x <- rnorm(1000)
 plot(3001:4000, x, t="l", main="Trace of x")
 plot(density(x), main="Density of x")
 #+END_SRC
+
+#+RESULTS:
+[[file:samples_2.png]]
 
 In this trace plot of random data, there is no autocorrelation of consecutive samples and the distribution of samples is stationary.  It is very likely that taking more samples wouldn’t shift the distribution substantially.  Hence, if we see a plot like this, we would be more confident that our posterior is a good approximation of the true posterior.
 
@@ -197,6 +403,9 @@ plot.acfs <- function(x) {
 }
 plot.acfs(m3$Sol)
 #+END_SRC
+
+#+RESULTS:
+[[file:autocorrelation_1.png]]
 
 Use thinning factor of 20 to get rid of some of the autocorrelation:
 
@@ -223,9 +432,15 @@ chain.plot <- function(x) {
 chain.plot(m4$Sol)
 #+END_SRC
 
+#+RESULTS:
+[[file:samples_3.png]]
+
 #+BEGIN_SRC R :session *R* :exports both :results graphics :file autocorrelation_2.png :width 800 :height 600 :res 100
 plot.acfs(m4$Sol)
 #+END_SRC
+
+#+RESULTS:
+[[file:autocorrelation_2.png]]
 
 Ok, we need to simplify the model.  This model had only random intercepts and the random sloped for the effects of interest:
 
@@ -256,9 +471,15 @@ m5 <- MCMCglmm(p ~ (a + b + c)^3,
 chain.plot(m5$Sol)
 #+END_SRC
 
+#+RESULTS:
+[[file:samples_4.png]]
+
 #+BEGIN_SRC R :session *R* :exports both :results graphics :file autocorrelation_3.png :width 800 :height 600 :res 100
 plot.acfs(m5$Sol)
 #+END_SRC
+
+#+RESULTS:
+[[file:autocorrelation_3.png]]
 
 Still too much autocorrelation but this time thinning may help:
 
@@ -278,13 +499,19 @@ m6 <- MCMCglmm(p ~ (a + b + c)^3,
 chain.plot(m6$Sol)
 #+END_SRC
 
+#+RESULTS:
+[[file:samples_5.png]]
+
 #+BEGIN_SRC R :session *R* :exports both :results graphics :file autocorrelation_4.png :width 800 :height 600 :res 100
 plot.acfs(m6$Sol)
 #+END_SRC
 
+#+RESULTS:
+[[file:autocorrelation_4.png]]
+
 Looks good but a more formal criterion would be nice.
 
-** Gelman-Rubin criterion
+* Gelman-Rubin criterion
 
 Running multiple chains so we can calculate the Gelman-Rubin criterion:
 
@@ -293,8 +520,8 @@ library(parallel)
 
 ml <- mclapply(1:4, function(i) {
   MCMCglmm(p ~ (a + b + c)^3,
-             ~ us(1 + a : b : c):subject +
-               us(1 + a : b    ):item,
+           random = ~us(1 + a : b : c):subject +
+                     us(1 + a : b)      :item,
            data   = d,
            family = "categorical",
            prior  = prior2,
@@ -307,36 +534,89 @@ ml <- lapply(ml, function(m) m$Sol)
 ml <- do.call(mcmc.list, ml)
 #+END_SRC
 
-The ~coda~ package contains lots of useful stuff and also an implementation of the Gelman-Rubin criterion along with plots showing how this criterion develops as we collect more samples:
-
-#+BEGIN_SRC R :session *R* :exports both :results graphics :file gelman_rubin.png :width 800 :height 600 :res 90
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file gelman_rubin.png :width 800 :height 600 :res 100
 library(coda)
 
-par(mfrow=c(4,2), mar=c(2,2,1,0))
+par(mfrow=c(4,2), mar=c(2,2,1,2))
 gelman.plot(ml, auto.layout=F)
 #+END_SRC
+
+#+RESULTS:
+[[file:gelman_rubin.png]]
 
 #+BEGIN_SRC R :session *R* :exports both :results output
 gelman.diag(ml)
 #+END_SRC
 
-The intuition captured by the Gelman-Rubin criterion is basically that the model is good enough if the four chains “mix” which basically means that they neatly overlap.
+#+RESULTS:
+#+begin_example
+Potential scale reduction factors:
 
-#+BEGIN_SRC R :session *R* :exports both :results graphics :file samples_X.png :width 800 :height 400 :res 80
-par(mfrow=c(2,1), mar=c(2, 0, 2, 0))
-plot(ml, auto.layout=F)
+               Point est. Upper C.I.
+(Intercept)          1.00       1.00
+np1                  1.00       1.01
+active               1.00       1.01
+ic1                  1.00       1.01
+np1:active           1.01       1.02
+np1:ic1              1.01       1.02
+active:ic1           1.00       1.01
+np1:active:ic1       1.00       1.00
+
+Multivariate psrf
+
+1.01
+#+end_example
+
+The chains are mixing:
+
+#+BEGIN_SRC R :session *R* :exports both :results graphics :file samples_6.png :width 800 :height 400 :res 80
+par(mfrow=c(2,1), mar=c(2, 1, 1, 1))
+plot(ml, ask=F, auto.layout=F)
 #+END_SRC
 
-This all looks very promising and we can finally have a look at the results.
+#+RESULTS:
+[[file:samples_6.png]]
+
 
 * Results
 
-Summary of the chains:
-
-#+BEGIN_SRC R
-sml <- summary(ml)
-sml
+#+BEGIN_SRC R :session *R* :exports both :results output
+summary(ml)
 #+END_SRC
+
+#+RESULTS:
+#+begin_example
+
+Iterations = 3001:42981
+Thinning interval = 20 
+Number of chains = 4 
+Sample size per chain = 2000 
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+                   Mean     SD Naive SE Time-series SE
+(Intercept)     0.88760 0.3223 0.003603       0.006139
+np1             2.16357 0.1797 0.002009       0.006752
+active         -0.12868 0.1550 0.001733       0.004029
+ic1            -0.07231 0.1675 0.001873       0.004531
+np1:active      0.63445 0.1616 0.001806       0.004143
+np1:ic1        -0.09042 0.1530 0.001710       0.004085
+active:ic1     -0.55118 0.1631 0.001824       0.005493
+np1:active:ic1 -0.40531 0.1670 0.001867       0.004164
+
+2. Quantiles for each variable:
+
+                  2.5%     25%      50%      75%    97.5%
+(Intercept)     0.2665  0.6711  0.88482  1.10185  1.53502
+np1             1.8305  2.0392  2.15814  2.28096  2.52878
+active         -0.4257 -0.2350 -0.13138 -0.02418  0.17897
+ic1            -0.4075 -0.1823 -0.07208  0.04047  0.24947
+np1:active      0.3239  0.5256  0.63160  0.74096  0.95645
+np1:ic1        -0.4014 -0.1895 -0.08847  0.01365  0.20370
+active:ic1     -0.8830 -0.6565 -0.54657 -0.43921 -0.24609
+np1:active:ic1 -0.7409 -0.5142 -0.40286 -0.29114 -0.08598
+#+end_example
 
 Plot of the parameter estimates with 95% credible intervals:
 
@@ -359,6 +639,9 @@ plot.estimates <- function(x) {
 
 plot.estimates(ml)
 #+END_SRC
+
+#+RESULTS:
+[[file:parameter_estimates.png]]
 
 Yay, the three way interaction is significant! But note that we can't really evaluate other effects because the model doesn't have the corresponding random slopes.
 
