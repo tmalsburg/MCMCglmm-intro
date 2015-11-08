@@ -294,7 +294,7 @@ Below you see the definition of the maximal model corresponding to the first lme
 library(MCMCglmm)
 set.seed(14)
 
-prior1 <- list(
+prior.m3 <- list(
   R=list(V=1, n=1),
   G=list(G1=list(V        = diag(8),
                  n        = 8,
@@ -310,13 +310,13 @@ m3 <- MCMCglmm(p ~ (a + b + c)^3,
                    us(1 + (a + b    )^2):item,
                data   = d,
                family = "categorical",
-               prior  = prior1,
+               prior  = prior.m3,
                thin   = 1,
                burnin = 3000,
                nitt   = 4000)
 #+END_SRC
 
-The variable ~prior1~ contains the specification of the priors.  Priors can be defined for the residuals, the fixed effects, and the random effects.  Here we only specify priors for the residuals (~R~) and the random effects (~G~).  The distribution used for the priors is the inverse-Wishart distribution, a probability distribution on covariance matrices.  The univariate special case of the inverse-Wishart distribution is the inverse-gamma distribution.  This form is used as the prior for the variance of the residuals.  ~V~ is the scale matrix of the inverse-Wishart and equals 1 because we want the univariate case. ~n~ is the degrees of freedom parameter and is set to 1 which gives us the weakest possible prior.
+The variable ~prior.m3~ contains the specification of the priors.  Priors can be defined for the residuals, the fixed effects, and the random effects.  Here we only specify priors for the residuals (~R~) and the random effects (~G~).  The distribution used for the priors is the inverse-Wishart distribution, a probability distribution on covariance matrices.  The univariate special case of the inverse-Wishart distribution is the inverse-gamma distribution.  This form is used as the prior for the variance of the residuals.  ~V~ is the scale matrix of the inverse-Wishart and equals 1 because we want the univariate case. ~n~ is the degrees of freedom parameter and is set to 1 which gives us the weakest possible prior.
 
 ~G1~ is the prior definition for the eight subject random effects. ~V~ is set to 8 because we have eight random effects for subjects (intercept, the three factors, their three two-way interactions, and one three-way interaction) and the covariance matrix therefore needs 8×8 entries.  Again, ~n~ is set to give us the weakest prior (the lower bound for ~n~ is the number of dimensions).  Further, we have parameters ~alpha.mu~ and ~alpha.V~.  These specify an additional prior which is used for parameter expansion, which is basically a trick to improve the rate of convergence.  All we care about is that the ~alpha.mu~ is a vector of as many zeros as there are random effects and that ~alpha.V~ is a n×n matrix with large numbers on the diagonal and n being the number of random effects.  See Hadfield (2010) and Hadfield’s course notes on MCMCglmm (included in the R package) for details.
 
@@ -425,7 +425,7 @@ m4 <- MCMCglmm(p ~ (a + b + c)^3,
                    us(1 + (a + b    )^2):item,
                data   = d,
                family = "categorical",
-               prior  = prior1,
+               prior  = prior.m3,
                thin   = 20,
                burnin = 3000,
                nitt   = 23000)
@@ -455,7 +455,7 @@ plot.acfs(m4$Sol)
 Ok, we need to simplify the model.  This model had only random intercepts and the random sloped for the effects of interest:
 
 #+BEGIN_SRC R
-prior2 <- list(
+prior.m5 <- list(
   R=list(V=1, n=1),
   G=list(G1=list(V        = diag(2),
                  n        = 2,
@@ -471,7 +471,7 @@ m5 <- MCMCglmm(p ~ (a + b + c)^3,
                    us(1 + a : b    ):item,
                data   = d,
                family = "categorical",
-               prior  = prior2,
+               prior  = prior.m5,
                thin   = 1,             # No thinning!
                burnin = 3000,
                nitt   = 4000)
