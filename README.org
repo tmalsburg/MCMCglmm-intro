@@ -656,6 +656,16 @@ plot.estimates(ml)
 Yay, the three way interaction is significant! But note that we can't really evaluate other effects because the model doesn't have the corresponding random slopes.
 
 * Summary
+- Pros
+  - more flexibility
+  - more control
+  - more transparent
+  - more complex models possible
+  - gives us credible intervals instead of confidence intervals
+- Cons
+  - requires more technical knowledge into the process
+  - model fitting process perhaps more involved (but messing with lmer
+    models is actually as much work but messier)
 
 * References
 
