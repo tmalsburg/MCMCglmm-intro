@@ -1,0 +1,8 @@
+* TODO Use ~effectiveSize~ from the coda package.
+* TODO Mention or use other criteria for determining convergence.
+- Heidelberg & Welch convergence diagnostic
+- Geweke’s convergence diagnostic
+- Raftery and Lewis diagnostic
+
+All available in the coda package.
+

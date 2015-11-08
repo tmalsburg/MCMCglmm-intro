@@ -3,12 +3,6 @@
 #+EMAIL: malsburg@ucsd.edu, mezhan@mail.ucsd.edu
 #+DATE: 11/06/2015
 
-* Todo
-- Use ~effectiveSize~ from the coda package.
-- Mention other criteria for determining convergence (Heidelberg & Welch convergence diagnostic, Geweke’s convergence diagnostic, Raftery and Lewis diagnostic).
-
-* Abstract
-
 The lme4 package for fitting (generalized) linear mixed-effects models has proven to be a powerful tool for analyzing data from experimental studies.  However, most people encounter situations in which lme4 does not provide answers because the model-fitting process fails to converge.  This can be the case when the model is too complex to be supported by the data (c.f., Bates, Kliegl, Vasishth, Bayen, 2015).  Bayesian implementations of mixed-effects models can help in these situations because mild priors on the random effects parameters can be used to constrain the search space.  MCMCglmm is a package for fitting Bayesian mixed models in R and although its use is roughly similar to lme4’s there are some additional complexities that the user has to deal with.  This tutorial aims to get you started with MCMCglmm and shows how the Bayesian analogue of an lme4 model can be implemented with MCMCglmm.  Note that this text is not supposed to be an introduction to Bayesian mixed models or MCMC sampling more generally.  We rather assume that you are at least vaguely familiar with the basic ideas behind these concepts.
 
 * Overview
