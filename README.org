@@ -3,7 +3,7 @@
 #+EMAIL: malsburg@ucsd.edu, mezhan@mail.ucsd.edu
 #+DATE: 11/06/2015
 
-* TODO																														 :noexport:
+* Todo
 - Use ~effectiveSize~ from the coda package.
 - Mention other criteria for determining convergence (Heidelberg & Welch convergence diagnostic, Geweke’s convergence diagnostic, Raftery and Lewis diagnostic).
 
@@ -116,8 +116,6 @@ We start with the maximal model justified by the design:
 library(lme4)
 #+END_SRC
 
-#+RESULTS:
-
 #+BEGIN_SRC R
 m1 <- glmer(p ~  (a + b + c)^3            +
                 ((a + b + c)^3 | subject) + 
@@ -156,66 +154,58 @@ summary(m1)
 #+begin_example
 Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
  Family: binomial  ( logit )
-Formula: p ~ (np1 + active + ic1)^3 + ((np1 + active + ic1)^3 | subject) +      (np1 * active | item)
-   Data: Exp3_free
+Formula: p ~ (a + b + c)^3 + ((a + b + c)^3 | subject) + (a * b | item)
+   Data: d
 
      AIC      BIC   logLik deviance df.resid 
-  1015.5   1286.2   -453.7    907.5     1058 
+  1015.4   1286.1   -453.7    907.4     1058 
 
 Scaled residuals: 
     Min      1Q  Median      3Q     Max 
--2.9524 -0.2471  0.0715  0.3325  3.3130 
+-2.8193 -0.2467  0.0748  0.3402  3.3823 
 
 Random effects:
- Groups  Name           Variance  Std.Dev. Corr                                     
- subject (Intercept)    30.410930 5.51461                                           
-         np1            12.098270 3.47826   0.89                                    
-         active         10.382867 3.22225   0.97  0.96                              
-         ic1            15.047532 3.87911  -0.97 -0.96 -1.00                        
-         np1:active     14.146457 3.76118   0.97  0.95  0.98 -0.99                  
-         np1:ic1        11.313383 3.36354  -0.96 -0.96 -0.99  1.00 -1.00            
-         active:ic1     14.433649 3.79916  -0.96 -0.97 -1.00  1.00 -0.98  0.99      
-         np1:active:ic1 15.275932 3.90844  -0.95 -0.98 -0.99  0.99 -0.98  0.99  1.00
- item    (Intercept)     0.079619 0.28217                                           
-         np1             0.086893 0.29478  -1.00                                    
-         active          0.006393 0.07995  -1.00  1.00                              
-         np1:active      0.026452 0.16264  -0.99  0.99  0.97                        
+ Groups  Name        Variance  Std.Dev. Corr                                     
+ subject (Intercept) 17.820921 4.22148                                           
+         a            5.870980 2.42301   0.75                                    
+         b            4.034689 2.00865   0.93  0.92                              
+         c            7.017637 2.64908  -0.94 -0.90 -1.00                        
+         a:b          6.884291 2.62379   0.92  0.87  0.96 -0.97                  
+         a:c          4.744315 2.17814  -0.91 -0.93 -0.99  0.99 -0.99            
+         b:c          6.747912 2.59767  -0.91 -0.92 -1.00  1.00 -0.95  0.98      
+         a:b:c        7.518109 2.74192  -0.88 -0.95 -0.99  0.99 -0.96  0.99  0.99
+ item    (Intercept)  0.068686 0.26208                                           
+         a            0.093373 0.30557  -1.00                                    
+         b            0.009298 0.09643  -0.99  0.99                              
+         a:b          0.028084 0.16758  -1.00  1.00  0.99                        
 Number of obs: 1112, groups:  subject, 71; item, 36
 
 Fixed effects:
-               Estimate Std. Error z value Pr(>|z|)    
-(Intercept)       3.764      1.484   2.537 0.011189 *  
-np1               5.260      1.403   3.750 0.000177 ***
-active            2.953      1.371   2.154 0.031274 *  
-ic1              -3.024      1.393  -2.171 0.029926 *  
-np1:active        3.756      1.387   2.707 0.006783 ** 
-np1:ic1          -3.296      1.378  -2.392 0.016774 *  
-active:ic1       -3.621      1.407  -2.574 0.010048 *  
-np1:active:ic1   -3.642      1.410  -2.583 0.009787 ** 
+            Estimate Std. Error z value Pr(>|z|)   
+(Intercept)    2.603      1.457   1.786  0.07404 . 
+a              4.148      1.434   2.893  0.00381 **
+b              1.831      1.459   1.254  0.20965   
+c             -1.864      1.442  -1.292  0.19622   
+a:b            2.574      1.475   1.744  0.08112 . 
+a:c           -2.201      1.433  -1.536  0.12456   
+b:c           -2.536      1.377  -1.841  0.06561 . 
+a:b:c         -2.504      1.452  -1.725  0.08448 . 
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Correlation of Fixed Effects:
-            (Intr) np1    active ic1    np1:ct np1:c1 actv:1
-np1          0.957                                          
-active       0.967  0.989                                   
-ic1         -0.980 -0.980 -0.986                            
-np1:active   0.980  0.980  0.983 -0.992                     
-np1:ic1     -0.968 -0.988 -0.993  0.984 -0.986              
-active:ic1  -0.974 -0.990 -0.991  0.987 -0.985  0.993       
-np1:actv:c1 -0.978 -0.984 -0.984  0.992 -0.990  0.986  0.987
+      (Intr) a      b      c      a:b    a:c    b:c   
+a      0.942                                          
+b      0.947  0.977                                   
+c     -0.968 -0.966 -0.979                            
+a:b    0.965  0.968  0.974 -0.989                     
+a:c   -0.946 -0.978 -0.989  0.975 -0.979              
+b:c   -0.963 -0.986 -0.977  0.972 -0.966  0.979       
+a:b:c -0.972 -0.975 -0.966  0.984 -0.980  0.973  0.978
 convergence code: 0
 unable to evaluate scaled gradient
-Model failed to converge: degenerate  Hessian with 4 negative eigenvalues
+Model failed to converge: degenerate  Hessian with 1 negative eigenvalues
 failure to converge in 10000 evaluations
-
-Warning messages:
-1: In vcov.merMod(object, use.hessian = use.hessian) :
-  variance-covariance matrix computed from finite-difference Hessian is
-not positive definite or contains NA values: falling back to var-cov estimated from RX
-2: In vcov.merMod(object, correlation = correlation, sigm = sig) :
-  variance-covariance matrix computed from finite-difference Hessian is
-not positive definite or contains NA values: falling back to var-cov estimated from RX
 #+end_example
 
 The estimates of the correlations of random effects are all close to -1 or 1 and all fixed effects and interactions are highly significant, both is highly implausible.  The standard thing to do in this situation is to simplify the model until it converges.  According to Barr et al., one constraint in doing do is that the random slopes for the effect of interest (the effect about which we want to make inferences, in this case the three-way interaction ~a:b:c~) need to be in the model, otherwise there may be an inflated chance of false positive effects.  Under this constraint, the simplest possible model is the following:
@@ -245,8 +235,8 @@ summary(m2)
 #+begin_example
 Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
  Family: binomial  ( logit )
-Formula: p ~ (np1 + active + ic1)^3 + (0 + np1:active:ic1 | subject) +      (0 + np1:active | item)
-   Data: Exp3_free
+Formula: p ~ (a + b + c)^3 + (0 + a:b:c | subject) + (0 + a:b | item)
+   Data: d
 
      AIC      BIC   logLik deviance df.resid 
   1133.9   1184.0   -556.9   1113.9     1102 
@@ -256,33 +246,33 @@ Scaled residuals:
 -8.4530 -0.5253  0.2503  0.5369  4.1687 
 
 Random effects:
- Groups  Name           Variance  Std.Dev. 
- subject np1:active:ic1 5.498e-01 0.7415049
- item    np1:active     2.526e-07 0.0005026
+ Groups  Name  Variance  Std.Dev.
+ subject a:b:c 5.498e-01 0.741505
+ item    a:b   2.530e-07 0.000503
 Number of obs: 1112, groups:  subject, 71; item, 36
 
 Fixed effects:
-                Estimate Std. Error z value Pr(>|z|)    
-(Intercept)     0.444294   0.113699   3.908 9.32e-05 ***
-np1             1.576301   0.118933  13.254  < 2e-16 ***
-active          0.062480   0.112740   0.554  0.57945    
-ic1            -0.008851   0.113678  -0.078  0.93794    
-np1:active      0.360923   0.111885   3.226  0.00126 ** 
-np1:ic1        -0.196345   0.112047  -1.752  0.07972 .  
-active:ic1     -0.537264   0.114899  -4.676 2.93e-06 ***
-np1:active:ic1 -0.209187   0.142544  -1.468  0.14223    
+             Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  0.444294   0.113699   3.908 9.32e-05 ***
+a            1.576301   0.118932  13.254  < 2e-16 ***
+b            0.062480   0.112740   0.554  0.57945    
+c           -0.008851   0.113677  -0.078  0.93794    
+a:b          0.360923   0.111885   3.226  0.00126 ** 
+a:c         -0.196345   0.112047  -1.752  0.07972 .  
+b:c         -0.537264   0.114899  -4.676 2.93e-06 ***
+a:b:c       -0.209187   0.142544  -1.468  0.14223    
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Correlation of Fixed Effects:
-            (Intr) np1    active ic1    np1:ct np1:c1 actv:1
-np1          0.235                                          
-active       0.253  0.545                                   
-ic1         -0.411 -0.194 -0.232                            
-np1:active   0.563  0.256  0.234 -0.631                     
-np1:ic1     -0.231 -0.428 -0.641  0.222 -0.246              
-active:ic1  -0.248 -0.640 -0.431  0.237 -0.234  0.565       
-np1:actv:c1 -0.492 -0.166 -0.176  0.443 -0.338  0.192  0.170
+      (Intr) a      b      c      a:b    a:c    b:c   
+a      0.235                                          
+b      0.253  0.545                                   
+c     -0.411 -0.194 -0.232                            
+a:b    0.563  0.256  0.234 -0.631                     
+a:c   -0.231 -0.428 -0.641  0.222 -0.246              
+b:c   -0.248 -0.640 -0.431  0.237 -0.234  0.565       
+a:b:c -0.492 -0.166 -0.176  0.443 -0.338  0.192  0.170
 convergence code: 0
 unable to evaluate scaled gradient
 Model failed to converge: degenerate  Hessian with 1 negative eigenvalues
