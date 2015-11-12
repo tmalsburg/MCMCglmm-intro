@@ -96,13 +96,13 @@ a     -1   1
 
 In principle, lme4 can deal with unbalanced data sets but the low number of data points in some cells of the design means that it is hard to estimate some of the effects.  In the present scenario, this is particularly a problem because the main question was whether the three-way interaction ~a:b:c~ (indicated in the following plot below) was significant or not.
 
-#+BEGIN_SRC R :session *R* :results graphics :exports both :file plots/proportions_by_condition.png :width 400 :height 400 :res 100
+#+BEGIN_SRC R :session *R* :results graphics :exports both :file plots/three_way_mean.png :width 400 :height 400 :res 100
 plot(0:10, 0:10, t="n")
 text(5, 5, labels="TODO: Add the plot.")
 #+END_SRC
 
 #+RESULTS:
-[[file:plots/proportions_by_condition.png]]
+[[file:plots/three_way_mean.png]]
 
 We start with the maximal model justified by the design:
 
