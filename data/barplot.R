@@ -15,8 +15,7 @@ g <- g + geom_errorbar(aes(ymin=mean-se,ymax=mean+se),size= .5, width=.2, positi
 g <- g + ylim(c(0,1))
 g <- g + theme_bw(base_size=12)
 g <- g + ylab("Proportion of p")
-g <- g + xlab(" ")
 print(g)
-#ggsave("three_way_mean.pdf",height=5,width=5)
+#ggsave("three_way_mean.pdf",height=4,width=4)
 
 
