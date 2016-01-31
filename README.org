@@ -123,10 +123,6 @@ table(x$nc)
 |    7 |   18 |
 |    8 |    9 |
 
-* Attempt to model the data with lme4
-
-In principle, lme4 can deal with unbalanced data sets but the low number of data points in some cells of the design means that it is hard to estimate some of the effects.  One of these effects is the three-way interaction which depends on the proportions of pronouns in all cells of the design.  Unfortunately, this three-way interaction was precisely the effect of interest in the study.
-
 The following plot shows the proportion of pronoun responses in all cells of the design.
 
 #+BEGIN_SRC R :results graphics :exports both :file plots/three_way_mean.png :width 400 :height 400 :res 100
@@ -151,6 +147,10 @@ ggplot(condition.means, aes(x=interaction(c, b), fill=factor(a), y=mean)) +
 
 #+RESULTS:
 [[file:plots/three_way_mean.png]]
+
+* Attempt to model the data with lme4
+
+In principle, lme4 can deal with unbalanced data sets but the low number of data points in some cells of the design means that it is hard to estimate some of the effects.  One of these effects is the three-way interaction which depends on the proportions of pronouns in all cells of the design.  Unfortunately, this three-way interaction was precisely the effect of interest in the study.
 
 We start with the maximal model justified by the design:
 
@@ -437,7 +437,7 @@ plot(m3$Sol, auto.layout=F)
 #+RESULTS:
 [[file:plots/samples_1.png]]
 
-There are signals in these plots suggesting that our sample may not be good.  In general, there is high autocorrelation, which means that samples tend to have similar values as the directly preceding samples.  Also the traces are not /stationary/, which means that the sampling process dwells in one part of the parameter space and then visits other parts of the parameter space.  This can be observed at around 3900 samples where the trace of ~c~ suddenly moves to more positive values not visited before and the trace of ~a:b~ moves to more negative values.  Think about it this way: looking at these plots, is it likely that the density plots on the right would change if we would continue taking samples?  Yes, it is because there may be more sudden moves to other parts of the parameter space like that at around 3900.  Or the sampling process might dwell in the position reached at 4000 for a longer time leading to a shift in the distributions.  For example the density plot of ~a:b~ has a long tail coming from the last ~100 samples and this tail might have gotten fatter if we hadn’t ended the sampling process at 4000.  As long as these density plots keep changing, the sampling process has not converged and we don’t have a stable posterior.  
+There are signals in these plots suggesting that our sample may not be good.  In general, there is high autocorrelation, which means that samples tend to have similar values as the directly preceding samples.  Also the traces are not /stationary/, which means that the sampling process dwells in one part of the parameter space and then visits other parts of the parameter space.  This can be observed at around 3900 samples where the trace of ~c~ suddenly moves to more positive values not visited before and the trace of ~a:b~ moves to more negative values.  Think about it this way: looking at these plots, is it likely that the density plots on the right would change if we would continue taking samples?  Yes, it is because there may be more sudden moves to other parts of the parameter space like that at around 3900.  Or the sampling process might dwell in the position reached at 4000 for a longer time leading to a shift in the distributions.  For example the density plot of ~a:b~ has a long tail coming from the last ~100 samples and this tail might have gotten fatter if we hadn’t ended the sampling process at 4000 (later we will see that this is exactly what happens).  As long as these density plots keep changing, the sampling process has not converged and we don’t have a stable posterior.
 
 Ideally, we would like to have something like the following:
 
