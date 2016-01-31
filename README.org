@@ -1,4 +1,4 @@
-#+TITLE: Using MCMCglmm to implement lme4-like Bayesian mixed-effects models
+#+TITLE: Using MCMCglmm to implement lme4-like Bayesian mixed-effects models (DRAFT)
 #+AUTHOR: Titus von der Malsburg, Meilin Zhan
 #+EMAIL: malsburg@ucsd.edu, mezhan@mail.ucsd.edu
 #+DATE: 11/06/2015
