@@ -40,10 +40,6 @@ The experiment had a 2×2×2 design and the factors were ~a~, ~b~, and ~c~.  (Th
 
 We first load the data and whip it into shape:
 
-#+BEGIN_SRC R :exports none :results none
-setwd("/home/malsburg/Documents/Uni/Workshops/201511_MCMCglmm/MCMCglmm-intro")
-#+END_SRC
-
 #+BEGIN_SRC R :exports both :results table :colnames yes
 d <- read.table("data/data.tsv", sep="\t", head=T)
 d$pronoun <- as.logical(d$pronoun)

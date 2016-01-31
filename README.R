@@ -1,4 +1,3 @@
-setwd("/home/malsburg/Documents/Uni/Workshops/201511_MCMCglmm/MCMCglmm-intro")
 
 d <- read.table("data/data.tsv", sep="\t", head=T)
 
