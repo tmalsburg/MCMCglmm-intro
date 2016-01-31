@@ -53,7 +53,7 @@ d$pronoun <- as.logical(d$pronoun)
 head(d)
 #+END_SRC
 
-#+RESULTS[9da97e43dabd93889e4dc3e22ff87c033b338a32]:
+#+RESULTS:
 | subject | item |  a |  b |  c | pronoun |
 |---------+------+----+----+----+---------|
 |       1 |    1 | -1 |  1 | -1 | FALSE   |
@@ -85,7 +85,7 @@ dimnames(x) <- list(c("not-a", "a"), c("not-b", "b"), c("not-c", "c"))
 x
 #+END_SRC
 
-#+RESULTS[6cdc28317036251f13013712698eba30c9690807]:
+#+RESULTS:
 |       |       not.b.not.c |           b.not.c |           not.b.c |               b.c |
 |-------+-------------------+-------------------+-------------------+-------------------|
 | not-a | 0.264705882352941 | 0.235294117647059 |              0.42 |               0.2 |
@@ -98,7 +98,7 @@ Looking at the contingency table below, we see that some cells of the design had
 with(d, table(a, b, c))
 #+END_SRC
 
-#+RESULTS[ffd2eda6ce30bc5b0fee09ca3051e876d229d903]:
+#+RESULTS:
 |   |  a |  b |  c | Freq |
 |---+----+----+----+------|
 | 1 | -1 | -1 | -1 |   34 |
@@ -121,7 +121,7 @@ x <- d %>%
 table(x$nc)
 #+END_SRC
 
-#+RESULTS[30cc4d5885aaadd7da2419b63060b2e89bca33c7]:
+#+RESULTS:
 | Var1 | Freq |
 |------+------|
 |    4 |    9 |
@@ -156,7 +156,7 @@ ggplot(condition.means, aes(x=interaction(c, b), fill=factor(a), y=mean)) +
   ylab("Proportion of pronouns")
 #+END_SRC
 
-#+RESULTS[c263932f3fde7626081fa340d4618cf552763bd8]:
+#+RESULTS:
 [[file:plots/three_way_mean.png]]
 
 We start with the maximal model justified by the design:
@@ -398,7 +398,7 @@ Below we see the posterior means and quantiles obtained with the above model.  T
 summary(m3$Sol)
 #+END_SRC
 
-#+RESULTS[cbed6049558f5b8a10d3c1fadaa123830abe5997]:
+#+RESULTS:
 #+begin_example
 
 Iterations = 3001:4000
@@ -441,7 +441,7 @@ par(mfrow=c(8,2), mar=c(2,2,1,0))
 plot(m3$Sol, auto.layout=F)
 #+END_SRC
 
-#+RESULTS[67e09169f88b94c03334ba05d68ab404c6dac808]:
+#+RESULTS:
 [[file:plots/samples_1.png]]
 
 There are signals in these plots suggesting that our sample may not be good.  In general, there is high autocorrelation, which means that samples tend to have similar values as the directly preceding samples.  Also the traces are not /stationary/, which means that the sampling process dwells in one part of the parameter space and then visits other parts of the parameter space.  This can be observed at around 3900 samples where the trace of ~c~ suddenly moves to more positive values not visited before and the trace of ~a:b~ moves to more negative values.  Think about it this way: looking at these plots, is it likely that the density plots on the right would change if we would continue taking samples?  Yes, it is because there may be more sudden moves to other parts of the parameter space like that at around 3900.  Or the sampling process might dwell in the position reached at 4000 for a longer time leading to a shift in the distributions.  For example the density plot of ~a:b~ has a long tail coming from the last ~100 samples and this tail might have gotten fatter if we hadn’t ended the sampling process at 4000.  As long as these density plots keep changing, the sampling process has not converged and we don’t have a stable posterior.  
