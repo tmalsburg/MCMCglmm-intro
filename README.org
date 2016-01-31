@@ -2,10 +2,10 @@
 #+AUTHOR: Titus von der Malsburg, Meilin Zhan
 #+EMAIL: malsburg@ucsd.edu, mezhan@mail.ucsd.edu
 #+DATE: 11/06/2015
-#+PROPERTY: header-args:R :session *R* :tangle yes :comments link :eval no-export
 #+HTML_HEAD: <style>#content {width: 850px; margin-left: 50px; margin-bottom: 40px; padding: 20px; background: #fff;}
 #+HTML_HEAD: body {background: #eee;}
 #+HTML_HEAD: #postamble {margin-left: 50px; background: #eee;}</style>
+#+PROPERTY: header-args:R :session *R* :tangle yes :comments no :eval no-export
 
 # TODO About this document.
 # - disclaimer: Many questions will remain open but at least this tutorial will put you in the position to ask those questions.
@@ -42,14 +42,11 @@ We first load the data and whip it into shape:
 
 #+BEGIN_SRC R :exports none :results none
 setwd("/home/malsburg/Documents/Uni/Workshops/201511_MCMCglmm/MCMCglmm-intro")
-# load("data/models.Rda")
 #+END_SRC
 
 #+BEGIN_SRC R :exports both :results table :colnames yes
 d <- read.table("data/data.tsv", sep="\t", head=T)
-
 d$pronoun <- as.logical(d$pronoun)
-
 head(d)
 #+END_SRC
 
@@ -167,7 +164,7 @@ library(lme4)
 
 #+BEGIN_SRC R :export code :results none
 m1 <- glmer(pronoun ~  (a + b + c)^3            +
-                      ((a + b + c)^3 | subject) + 
+                      ((a + b + c)^3 | subject) +
                       ((a + b    )^2 | item),
             data=d, family="binomial")
 #+END_SRC
@@ -271,8 +268,8 @@ In our case, the effect of interest is the three-way interaction and the simples
 
 #+BEGIN_SRC R :export code :results none
 m2 <- glmer(pronoun ~ (a + b + c)^3 +
-                      (0 + a:b:c|subject) + 
-                      (0 + a:b:c|item),
+                      (0 + a : b : c|subject) +
+                      (0 + a : b : c|item),
             data=d, family="binomial")
 #+END_SRC
 
@@ -726,5 +723,5 @@ Our attempts to analyze the data with lme4 failed due to convergence errors.  Ev
   linear mixed models: the MCMCglmm R package. Journal of Statistical
   Software, 33(1), 1–22.
   https://cran.r-project.org/web/packages/MCMCglmm/vignettes/Overview.pdf 
-- Hadfield, J. (2015). Mcmcglmm Course Notes.
+- Hadfield, J. (2015). MCMCglmm Course Notes.
   https://cran.r-project.org/web/packages/MCMCglmm/vignettes/CourseNotes.pdf
