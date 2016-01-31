@@ -67,7 +67,7 @@ head(d)
 summary(d)
 #+END_SRC
 
-#+RESULTS[4a92743fb70fa639541d36cc40bb8df2b50293f5]:
+#+RESULTS:
 :     subject           item             a                 b                  c            pronoun       
 :  Min.   : 1.00   Min.   : 1.00   Min.   :-1.0000   Min.   :-1.00000   Min.   :-1.0000   Mode :logical  
 :  1st Qu.:19.00   1st Qu.: 9.00   1st Qu.:-1.0000   1st Qu.:-1.00000   1st Qu.:-1.0000   FALSE:477      
