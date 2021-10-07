@@ -12,7 +12,7 @@
 # - feel free to use issue tracker and PRs are welcome
 # - reference to tangled code
 
-*Note: I wrote this tutorial four years ago when MCMCglmm was perhaps the best options for fitting Bayesian LMMs in R.  In the meantime, much better alternatives have been developed, first and foremost the excellent [[https://github.com/paul-buerkner/brms][brms]] package.  Brms is much more powerful and has brilliant documentation.  For this reason, I consider this tutorial largely obsolete.*
+*Note: I wrote this tutorial in 2015 when MCMCglmm was perhaps the best options for fitting Bayesian LMMs in R.  In the meantime, much better alternatives have been developed, first and foremost the excellent [[https://github.com/paul-buerkner/brms][brms]] package.  Brms is much more powerful and has brilliant documentation.  For this reason, I consider this tutorial largely obsolete.*
 
 The lme4 package for fitting (generalized) linear mixed-effects models has proven to be a powerful tool for analyzing data from experimental studies.  However, most people encounter situations in which lme4 does not provide answers because the model-fitting process fails to converge.  This is can be the case when the model is too complex to be supported by the available data.  Bayesian implementations of mixed-effects models can help in some of these situations because mild priors on the random effects parameters can be used to constrain the search space.  In non-technical terms, the Bayesian framework allows us to nudge the model fitting process in the right direction.
 
